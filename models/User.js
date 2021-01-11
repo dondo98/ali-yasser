@@ -4,7 +4,8 @@ const Schema = mongoose.Schema;
 const UserSchema = new Schema({
   username: {
     type: String,
-    required: true
+    required: true,
+    unique:true
   },
   password: {
     type: String,
@@ -15,62 +16,39 @@ const UserSchema = new Schema({
     unique: true,
     required: true
   },
-  favoriteArticles: {
-    type: [
-      {
-        author: {
-          type: String,
-          required: false
-        },
-        title: {
-          type: String,
-          required: false
-        },
-        publishedAt: {
-          type: Date,
-          required: false
-        },
-        urlToImage: {
-          type: String,
-          required: false
-        },
-        description: {
-          type: String,
-          required: false
-        },
-        content: {
-          type: String,
-          required: false
-        },
-        url: {
-          type: String,
-          required: false
-        }
-      }
-    ],
-    default: [],
+  firstname:{
+    type: String,
+    required: true
+  },
+  lastname:{
+    type: String,
+    required: true
+  },
+  birthdate:{
+    type: Date,
+    required: true
+  },
+  gender:{
+    type: String,
+    required: true
+  },
+  city:{
+    type: String,
+    required: true
+  },
+  address:{
+    type: String,
     required: false
   },
-  favoriteAuthors: {
-    type: [
-      {
-        type: String,
-        required: true
-      }
-    ],
-    default: [],
-    required: false
+  role:{
+    type: String,
+    required: true
   },
-  topicsHistory: {
-    type: [
-      {
-        type: String,
-        required: true
-      }
-    ],
-    default: [],
-    required: false
+  approved:{
+    type:Boolean,
+    required:true
   }
+
 });
 
 module.exports = User = mongoose.model("User", UserSchema);
