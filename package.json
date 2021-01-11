@@ -1,0 +1,68 @@
+{
+  "name": "news-app",
+  "version": "1.0.0",
+  "description": "a news app",
+  "main": "index.js",
+  "dependencies": {
+    "@material-ui/core": "^4.7.0",
+    "@material-ui/icons": "^4.5.1",
+    "axios": "^0.18.0",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.18.3",
+    "compression": "^1.7.4",
+    "concurrently": "^4.1.0",
+    "connect-flash": "^0.1.1",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "express": "^4.16.4",
+    "express-session": "^1.15.6",
+    "express-test": "^0.1.2",
+    "flash": "^1.1.0",
+    "foundation-sites": "^6.5.3",
+    "helmet": "^3.16.0",
+    "html-pdf": "^2.2.0",
+    "joi": "^14.3.1",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.24.0",
+    "mongodb": "^3.1.13",
+    "mongoose": "^5.4.19",
+    "newsapi": "^2.4.0",
+    "nock": "^10.0.6",
+    "node-fetch": "^2.3.0",
+    "node-sass": "^4.11.0",
+    "nodemailer": "^6.0.0",
+    "passport": "^0.4.0",
+    "passport-jwt": "^4.0.0",
+    "passport-local": "^1.0.0",
+    "prop-types-extra": "^1.1.0",
+    "react-router-dom": "^5.0.0",
+    "react-stepper-horizontal": "^1.0.11",
+    "react-stripe-elements": "^2.0.3",
+    "react-widgets": "^4.4.10",
+    "stripe": "^6.28.0",
+    "validator": "^10.11.0",
+    "xmlhttprequest": "^1.8.0"
+  },
+  "devDependencies": {
+    "axios": "^0.18.0",
+    "nodemon": "^1.18.11"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "client-install": "npm install --prefix client",
+    "start": "node index.js",
+    "server": "nodemon index.js",
+    "client": "npm start --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Moe98/ACML.git"
+  },
+  "author": "Abc",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Moe98/ACML/issues"
+  },
+  "homepage": "https://github.com/Moe98/ACML#readme"
+}
