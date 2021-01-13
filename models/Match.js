@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
@@ -15,7 +16,7 @@ const MatchSchema = new Schema({
     required: true
   },
   datetime:{
-    type: datetime,
+    type: Date,
     required: true
   },
   mainreferee:{
@@ -30,14 +31,17 @@ const MatchSchema = new Schema({
     type: String,
     required: true
   },
+  stadium_id:{
+    type: Schema.Types.ObjectId, ref: 'Stadium'
+},
   // foreign key mn stadium  
   stadiumArray:{
     type:[{
-      rows: {
+      row: {
         type:[{
           columns:{
             type:Boolean,
-            required:false
+            required:true
           }
         }],
         required: true

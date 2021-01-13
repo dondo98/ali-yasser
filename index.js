@@ -1,4 +1,4 @@
-const express = require("express");
+/*const express = require("express");
 const mongoose = require("mongoose");
 const flash = require("connect-flash");
 const session = require("express-session");
@@ -77,3 +77,4 @@ app.use((req, res) => {
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));
+*/

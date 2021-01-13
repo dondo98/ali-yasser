@@ -3,13 +3,17 @@ const Schema = mongoose.Schema;
 
 const StadiumSchema = new Schema({
   rows: {
-    type: Integer,
+    type: Number,
     required: true
   },
   columns: {
-    type: Integer,
+    type: Number,
     required: true
   },
+  name:{
+    type:String,
+    required:true
+  }
 
 });
 

@@ -12,7 +12,25 @@ module.exports = {
         .required(),
       password: Joi.string()
         .min(8)
-        .required()
+        .required(),
+       firstname:Joi.string()
+       .required(),
+       lastname:Joi.string()
+       .required(),
+       birthdate:Joi.date()
+       .required(),
+       gender:Joi.string()
+       .required(),
+       city:Joi.string()
+       .required(),
+       address:Joi.string()
+       .required(),
+       role:Joi.string()
+       .required(),
+       approved:Joi.boolean()
+       .required()
+     
+
     };
     return Joi.validate(request, createSchema);
   },

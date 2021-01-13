@@ -1,12 +1,4 @@
 const validator = require("../validations/userValidations");
-const bcrypt = require("../routes/api/utils/encryption.js");
-const newsURI = require("../config/keys_dev").newsURI;
-const NewsAPI = require("newsapi");
-const newsapi = new NewsAPI(newsURI);
-const passport = require("passport");
-const tokenKey = require("../config/keys_dev").secretOrKey;
-const jwt = require("jsonwebtoken");
-var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const User = require("../models/User");
 const Match = require("../models/Match")
 const Stadium = require("../models/Stadium")
@@ -17,22 +9,42 @@ async function checkUniqueEmail(email) {
   if (existingUser) return false;
   return true;
 }
+async function checkUniqueUserName(username) {
+  const existingUser = await User.findOne({ username: username });
+  if (existingUser) return false;
+  return true;
+}
 // F12
 exports.registerUser = async function(req, res) {
+  const newUser = new User(req.body);
+  console.log(newUser)
   try {
     const isValidated = validator.createValidation(req.body);
     if (isValidated.error) {
       res.status(400).send({ error: isValidated.error.details[0].message });
       return;
-    }
+    } 
     const isUniqueEmail = await checkUniqueEmail(req.body.email);
     if (!isUniqueEmail)
+    {
       return res
         .status(400)
         .send({ error: `email ${req.body.email} is already taken!` });
-    req.body.password = bcrypt.hashPassword(req.body.password);
-    const newUser = await User.create(req.body);
-    res.send({ msg: "User was created successfully", data: newUser });
+        req.body.password = bcrypt.hashPassword(req.body.password);
+    }
+    const isUniqueUsername = await checkUniqueUserName(req.body.username);
+    if (!isUniqueUsername)
+    {
+      return res
+        .status(400)
+        .send({ error: `Username ${req.body.username} is already taken!` });
+        req.body.password = bcrypt.hashPassword(req.body.password);
+    }
+
+    const user = await newUser.save();
+    if(!user) throw Error("Something Went Wrong");
+    /*res.status(200).json(user);*/
+    res.status(200).send({ msg: "User was created successfully", data: user });
   } catch (error) {
     res.status(400).send({ error: "Something went wrong" });
   }
@@ -40,10 +52,10 @@ exports.registerUser = async function(req, res) {
 // does not represented in the documentation but need. 
 exports.getALlFans = async function(req, res) {
   try {
-    const id = req.params.id;
+    const id = req.params.user_id;
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
-    if(user.role!="siteAdministrator") return res.status(404).send({ error: "UnAuthorized Action" });
+    if(user.role!="siteAdminstrator") return res.status(404).send({ error: "UnAuthorized Action" });
     const fans= await User.find({role:"fan"});
     res.send({ data: fans });
   } catch (error) {
@@ -54,11 +66,11 @@ exports.getALlFans = async function(req, res) {
 // F1: Approve new users as an authority.
 exports.approveUser = async function(req, res) {
   try {
-    const id = req.params.id;
+    const id = req.params.user_id;
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
-    if(user.role!="siteAdministrator") return res.status(404).send({ error: "UnAuthorized Action" });
-    const userToBeApproved = await User.findOne({ _id: req.body.id });
+    if(user.role!="siteAdminstrator") return res.status(404).send({ error: "UnAuthorized Action" });
+    const userToBeApproved = await User.findOne({ _id: req.params.id });
     if(!userToBeApproved) return res.status(404).send({ error: "user to be approved does not exist" });
     await User.findByIdAndUpdate(userToBeApproved._id, {
       approved:true
@@ -71,11 +83,11 @@ exports.approveUser = async function(req, res) {
 //F2: Remove an existing user.
 exports.deleteUser = async function(req, res) {
   try {
-    const id = req.params.id;
+    const id = req.params.user_id;
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
-    if(user.role!="siteAdministrator") return res.status(404).send({ error: "UnAuthorized Action" });
-    const userToBeDelete = await User.findOne({ _id: req.body.id });
+    if(user.role!="siteAdminstrator") return res.status(404).send({ error: "UnAuthorized Action" });
+    const userToBeDelete = await User.findOne({ _id: req.params.id });
       const deletedUser = await User.findByIdAndRemove(userToBeDelete._id);
       res.send({ msg: "user was deleted successfully", data: deletedUser }); 
   } catch (error) {
@@ -85,10 +97,25 @@ exports.deleteUser = async function(req, res) {
 // F3: Create a new match event
 exports.createMatchEvent = async function(req, res) {
   try {
-    const id = req.params.id;
+    const id = req.params.user_id;
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
     if(user.role!="manager") return res.status(404).send({ error: "UnAuthorized Action" });
+    if(!req.body.stadium_id) return res.status(404).send({error:"Missing Stadium Details "});
+    const stadiumObj= await Stadium.findById( req.body.stadium_id)
+    if(!stadiumObj) return res.status(404).send({error:"Stadium does not found "})
+    const rows=stadiumObj.rows
+    const columns=stadiumObj.columns
+    var stadiumArray=[]
+    for(var i=0;i<rows;i++){
+      row={columns:[]}
+      stadiumArray[i]={row}
+      for(var j=0;j<columns;j++){
+        stadiumArray[i].row.columns[j]=false
+      }
+    }
+    console.log(stadiumArray) 
+    req.body.stadiumArray=stadiumArray
     const newMatch = await Match.create(req.body);
     res.send({ msg: "Match was created successfully", data: newMatch });
   } catch (error) {
@@ -99,11 +126,11 @@ exports.createMatchEvent = async function(req, res) {
 exports.updateMatchEvent = async function(req, res) {
   try {
     // ************** update body with 2d array of booleans depending on the stadium  rows and columns 
-    const id = req.params.id;
+    const id = req.params.user_id;
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
     if(user.role!="manager") return res.status(404).send({ error: "UnAuthorized Action" });
-    const matchToBeUpdated = await Match.findOne({ _id: req.body.id });
+    const matchToBeUpdated = await Match.findOne({ _id: req.params.id });
     if(!matchToBeUpdated) return res.status(404).send({ error: "match to be updated does not exist" });
     await Match.findByIdAndUpdate(matchToBeUpdated._id, req.body);
     res.send({ msg: "match updated successfully" });
@@ -114,7 +141,7 @@ exports.updateMatchEvent = async function(req, res) {
 // F5 
 exports.createStadium = async function(req, res) {
   try {
-    const id = req.params.id;
+    const id = req.params.user_id;
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
     if(user.role!="manager") return res.status(404).send({ error: "UnAuthorized Action" });
@@ -152,27 +179,16 @@ exports.updateUser = async function(req, res) {
     const email = user.email;
     const username = user.username;
     const password = req.body.password;
-    const firstname = req.body.password;
-    const lastname = req.body.password;
+    const firstname = req.body.firstname;
+    const lastname = req.body.las;
     const birthdate = req.body.password;
     const gender = req.body.gender;
     const city = req.body.city;
     const address = req.body.address;
     const role = user.role;
     const approved = user.approved;
-    await User.findByIdAndUpdate(id, {
-      email,
-      password,
-      username,
-      firstname,
-      lastname,
-      birthdate,
-      gender,
-      city,
-      address,
-      role,
-      approved
-    });
+    req.body.username=user.username
+    await User.findByIdAndUpdate(id, req.body);
     res.send({ msg: "user updated successfully" });
   } catch (error) {
     res.status(404).send({ error: "user does not exist" });

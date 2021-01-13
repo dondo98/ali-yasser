@@ -3,38 +3,33 @@ const express = require("express");
 const router = express.Router();
 const userController = require("../../controllers/userController");
 
-//Get All Users
-router.get("/", userController.getAllUsers);
+//Create A User
+router.post('/register',userController.registerUser);
+
+router.get("/getAllFans/:user_id", userController.getALlFans);
 
 //Get Specific User
-router.get("/:id", userController.getUser);
+router.post("/approveUser/:user_id/:id", userController.approveUser);
 
 //Create
-router.post("/", userController.createUser);
+router.delete("/deleteUser/:user_id/:id", userController.deleteUser);
 
-//Update
-router.put("/:id", userController.updateUser);
+//create and update match
+router.post('/createMatch/:user_id',userController.createMatchEvent);
+router.put("/updateMatch/:user_id/:id", userController.updateMatchEvent);
 
-//Delete
-router.delete("/:id", userController.deleteUser);
+//create Stadium
+router.post("/createStadium/:user_id", userController.createStadium);
 
-//Search
-router.post("/search/:id/:searchQuery", userController.search);
+// get match details 
+router.get("/getMatchDetails/:id",userController.getMatchDetails);
 
-// get Favourite Articles
-router.get("/favouriteArticles/:id", userController.getFavoriteArticles);
+// update user 
+router.put("/updateUser/:id",userController.updateUser);
 
-// update Favourite Articles
-router.put("/favouriteArticles/:id", userController.updateFavouriteArticles);
+// get matches details 
+router.get("/getMatchesDetails",userController.getMatchesDetails);
 
-// get Favourite Authors
-router.get("/favouriteAuthors/:id", userController.getFavoriteAuthors);
-
-// update FavouriteAuthors
-router.put("/favouriteAuthors/:id", userController.updateFavouriteAuthors);
-
-// recommend Articles
-router.get("/recommend/:id", userController.recommend);
 
 // login
 router.post("/login", userController.login);
