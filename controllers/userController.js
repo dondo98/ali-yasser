@@ -2,6 +2,8 @@ const validator = require("../validations/userValidations");
 const User = require("../models/User");
 const Match = require("../models/Match")
 const Stadium = require("../models/Stadium")
+const Ticket = require("../models/Ticket")
+
 
 // create user
 async function checkUniqueEmail(email) {
@@ -106,15 +108,14 @@ exports.createMatchEvent = async function(req, res) {
     if(!stadiumObj) return res.status(404).send({error:"Stadium does not found "})
     const rows=stadiumObj.rows
     const columns=stadiumObj.columns
-    var stadiumArray=[]
-    for(var i=0;i<rows;i++){
-      row={columns:[]}
-      stadiumArray[i]={row}
-      for(var j=0;j<columns;j++){
-        stadiumArray[i].row.columns[j]=false
-      }
+    var stadiumArray=new Array(rows)
+    for( var i =0;i<stadiumArray.length;i++){
+        stadiumArray[i]=new Array(columns)
+        for(var j=0;j<columns;j++)
+        {
+          stadiumArray[i][j]=false
+        }
     }
-    console.log(stadiumArray) 
     req.body.stadiumArray=stadiumArray
     const newMatch = await Match.create(req.body);
     res.send({ msg: "Match was created successfully", data: newMatch });
@@ -125,7 +126,6 @@ exports.createMatchEvent = async function(req, res) {
 // F4: Edit the details of an existing match.
 exports.updateMatchEvent = async function(req, res) {
   try {
-    // ************** update body with 2d array of booleans depending on the stadium  rows and columns 
     const id = req.params.user_id;
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
@@ -205,6 +205,84 @@ exports.getMatchesDetails = async function(req, res) {
   }
 };
 
+exports.bookTicket = async function(req, res) {
+  try {
+    const id = req.params.user_id;
+    const user = await User.findOne({ _id: id });
+    const match_id=req.params.match_id;
+    if (!user) return res.status(404).send({ error: "user does not exist" });
+    if(user.role!="fan") return res.status(404).send({ error: "UnAuthorized Action" });
+    const match = await Match.findOne({ _id: match_id });
+    if(!match) return res.status(404).send({ error: "match does not exist" });
+    const x = req.body.x
+    const y = req.body.y
+    if(!req.body.x||!req.body.y)
+    {
+      return res.status(404).send({ error: "missing location in body" });
+    }
+    if(match.stadiumArray[x][y]) return res.status(404).send({ error: "That location already reserved to someone else " });
+
+    const getMyBookedTickets= await Ticket.find({user_id:id})
+    const matchDate=match.datetime.getFullYear()+'-'+(match.datetime.getMonth()+1)+'-'+match.datetime.getDate()
+    const timeOne=(match.datetime.getHours()*60)+match.datetime.getMinutes()
+    for(var i =0;i<getMyBookedTickets.length;i++){
+      if(getMyBookedTickets[i].match_id==match_id) return res.status(404).send({ error: "you already booked a ticket in that match " }); 
+      const everyMatch = await Match.findOne({_id:getMyBookedTickets[i].match_id})
+      const everyMatchDate=everyMatch.datetime.getFullYear()+'-'+(everyMatch.datetime.getMonth()+1)+'-'+everyMatch.datetime.getDate()
+      if(everyMatchDate==matchDate){
+        // check time 
+        const timeTwo=(everyMatch.datetime.getHours()*60)+everyMatch.datetime.getMinutes()
+        const diffTime=Math.abs(timeTwo-timeOne)
+        if(diffTime<=90) return res.status(404).send({ error: "you already booked a match at that time " });
+      }
+    }
+
+    var stadiumArray=match.stadiumArray
+    stadiumArray[x][y]=true
+    var createdTicket={
+      bookingdate:new Date(),
+      user_id:id,
+      match_id:match_id,
+      x:x,
+      y:y,
+      creditnumber:req.body.creditnumber,
+      pinnumber:req.body.pinnumber
+    }
+    await Ticket.create(createdTicket)
+    await Match.findByIdAndUpdate(match_id, {stadiumArray});
+    res.send({ msg: "Ticket is created succesfully " });
+  } catch (error) {
+    res.status(404).send({ error: "ticket is not created due to error " });
+  }
+};
+
+exports.deleteTicket = async function(req, res) {
+  try {
+    const id = req.params.user_id;
+    const ticket_id=req.params.ticket_id;
+    const user = await User.findOne({ _id: id });
+    if (!user) return res.status(404).send({ error: "user does not exist" });
+    const ticket = await Ticket.findOne({_id:ticket_id,user_id:id});
+    if (!ticket)  return res.status(404).send({error: "Ticket not found"});
+    const currentDate=new Date()
+    const match=await Match.findOne({_id:ticket.match_id})
+    const matchDate=match.datetime
+    if(dateDiffInDays(currentDate,matchDate)<3)
+      return res.status(400).send({error:"Ticket can not be cancelled because the match will start in less than 3 days"})
+    
+    const x = ticket.x
+    const y = ticket.y 
+    var stadiumArray=match.stadiumArray
+    stadiumArray[x][y]=false
+
+    await Ticket.findByIdAndRemove(ticket_id)
+    await Match.findByIdAndUpdate(match._id,{stadiumArray})
+    res.send({ msg: "Ticket was deleted successfully" }); 
+  } catch (error) {
+    res.status(404).send({ error: "error occurred while deleting the user" });
+  }
+};
+
 //login f13 
 exports.login = function(req, res, next) {
   passport.authenticate("users", async function(err, user) {
@@ -236,3 +314,11 @@ exports.login = function(req, res, next) {
     });
   })(req, res, next);
 };
+function dateDiffInDays(a, b) {
+  const _MS_PER_DAY = 1000 * 60 * 60 * 24;
+  // Discard the time and time-zone information.
+  const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+
+  return Math.floor((utc2 - utc1) / _MS_PER_DAY);
+}

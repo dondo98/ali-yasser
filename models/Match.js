@@ -34,20 +34,11 @@ const MatchSchema = new Schema({
   stadium_id:{
     type: Schema.Types.ObjectId, ref: 'Stadium'
 },
-  // foreign key mn stadium  
-  stadiumArray:{
-    type:[{
-      row: {
-        type:[{
-          columns:{
-            type:Boolean,
-            required:true
-          }
-        }],
-        required: true
-      }
-    }]
-  }
+  stadiumArray:[
+    {
+      type:Array  
+    }
+  ]
 
 });
 

@@ -31,6 +31,10 @@ router.put("/updateUser/:id",userController.updateUser);
 router.get("/getMatchesDetails",userController.getMatchesDetails);
 
 
+router.post("/bookTicket/:user_id/:match_id",userController.bookTicket);
+
+router.delete("/cancelTicket/:user_id/:ticket_id",userController.deleteTicket)
+
 // login
 router.post("/login", userController.login);
 
