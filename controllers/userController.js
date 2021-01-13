@@ -106,6 +106,27 @@ exports.createMatchEvent = async function(req, res) {
     if(!req.body.stadium_id) return res.status(404).send({error:"Missing Stadium Details "});
     const stadiumObj= await Stadium.findById( req.body.stadium_id)
     if(!stadiumObj) return res.status(404).send({error:"Stadium does not found "})
+
+    const getMatches = await Match.find({stadium_id:stadiumObj._id})
+
+    var datetimeMatch=req.body.datetime
+    datetimeMatch=new Date(req.body.datetime)
+
+    const timeOne=(datetimeMatch.getHours()*60)+datetimeMatch.getMinutes()
+    const matchDate=datetimeMatch.getFullYear()+'-'+(datetimeMatch.getMonth()+1)+'-'+datetimeMatch.getDate()
+
+    for( var i =0;i<getMatches.length;i++){
+      const everyMatch=getMatches[i]
+      const everyMatchDate=everyMatch.datetime.getFullYear()+'-'+(everyMatch.datetime.getMonth()+1)+'-'+everyMatch.datetime.getDate()
+      if(everyMatchDate==matchDate)
+      {
+        // check time 
+        const timeTwo=(everyMatch.datetime.getHours()*60)+everyMatch.datetime.getMinutes()
+        const diffTime=Math.abs(timeTwo-timeOne)
+        if(diffTime<=180) return res.status(404).send({ error: "There is a match in that stadium which conflict in that time " });
+      }
+    }
+
     const rows=stadiumObj.rows
     const columns=stadiumObj.columns
     var stadiumArray=new Array(rows)
