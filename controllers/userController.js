@@ -19,6 +19,7 @@ async function checkUniqueUserName(username) {
 // F12
 exports.registerUser = async function(req, res) {
   const newUser = new User(req.body);
+  
   console.log(newUser)
   try {
     const isValidated = validator.createValidation(req.body);
@@ -43,6 +44,10 @@ exports.registerUser = async function(req, res) {
         req.body.password = bcrypt.hashPassword(req.body.password);
     }
 
+    if(newUser.role=="siteAdminstrator")
+    {
+      newUser.approved=true;
+    }
     const user = await newUser.save();
     if(!user) throw Error("Something Went Wrong");
     /*res.status(200).json(user);*/
@@ -103,6 +108,7 @@ exports.createMatchEvent = async function(req, res) {
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
     if(user.role!="manager") return res.status(404).send({ error: "UnAuthorized Action" });
+    if(!user.approved) return res.status(404).send({ error: "You're still not approved" });
     if(!req.body.stadium_id) return res.status(404).send({error:"Missing Stadium Details "});
     const stadiumObj= await Stadium.findById( req.body.stadium_id)
     if(!stadiumObj) return res.status(404).send({error:"Stadium does not found "})
@@ -151,6 +157,7 @@ exports.updateMatchEvent = async function(req, res) {
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
     if(user.role!="manager") return res.status(404).send({ error: "UnAuthorized Action" });
+    if(!user.approved) return res.status(404).send({ error: "You're still not approved" });
     const matchToBeUpdated = await Match.findOne({ _id: req.params.id });
     if(!matchToBeUpdated) return res.status(404).send({ error: "match to be updated does not exist" });
     await Match.findByIdAndUpdate(matchToBeUpdated._id, req.body);
@@ -166,6 +173,7 @@ exports.createStadium = async function(req, res) {
     const user = await User.findOne({ _id: id });
     if (!user) return res.status(404).send({ error: "user does not exist" });
     if(user.role!="manager") return res.status(404).send({ error: "UnAuthorized Action" });
+    if(!user.approved) return res.status(404).send({ error: "You're still not approved" });
     const newStadium = await Stadium.create(req.body);
     res.send({ msg: "Stadium was created successfully", data: newStadium });
   } catch (error) {
@@ -226,6 +234,7 @@ exports.getMatchesDetails = async function(req, res) {
   }
 };
 
+
 exports.bookTicket = async function(req, res) {
   try {
     const id = req.params.user_id;
@@ -233,6 +242,7 @@ exports.bookTicket = async function(req, res) {
     const match_id=req.params.match_id;
     if (!user) return res.status(404).send({ error: "user does not exist" });
     if(user.role!="fan") return res.status(404).send({ error: "UnAuthorized Action" });
+    if(!user.approved) return res.status(404).send({error: "You're still unAuthorized"});
     const match = await Match.findOne({ _id: match_id });
     if(!match) return res.status(404).send({ error: "match does not exist" });
     const x = req.body.x
@@ -305,35 +315,26 @@ exports.deleteTicket = async function(req, res) {
 };
 
 //login f13 
-exports.login = function(req, res, next) {
-  passport.authenticate("users", async function(err, user) {
-    if (err) {
-      return next(err);
-    }
-    if (!user) {
-      return res.send({ error: "User not found" });
-    }
-    req.logIn(user, async function(err) {
-      try {
-        if (err) {
-          return next(err);
-        }
-        var user = await User.where("email", req.body.email);
-
-        const payload = {
-          id: user[0]._id,
-          email: user[0].email,
-          type: "user"
-        };
-
-        const token = jwt.sign(payload, tokenKey, { expiresIn: "1h" });
-        res.json({ data: `Bearer ${token}` });
-        return res.json({ data: "Token" });
-      } catch (err) {
-        return err;
+exports.login =async function(req, res, next) {
+  try{
+    var username = req.body.username;
+    var password = req.body.password;
+    User.findOne({username:username, password: password},function(err,user){
+      if(err){
+        console.log(err)
+        return res.status(500).send();
       }
-    });
-  })(req, res, next);
+      if(!user)
+      {
+        return res.status(404).send("username or password is incorrect");
+      }
+      return res.status(200).send("login successfully");
+    })
+  } catch (error)
+  {
+    res.status(404).send({ error: "error occurred while logging in" });
+  }
+ 
 };
 function dateDiffInDays(a, b) {
   const _MS_PER_DAY = 1000 * 60 * 60 * 24;

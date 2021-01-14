@@ -23,12 +23,10 @@ module.exports = {
        .required(),
        city:Joi.string()
        .required(),
-       address:Joi.string()
-       .required(),
+       address:Joi.string(),
        role:Joi.string()
        .required(),
        approved:Joi.boolean()
-       .required()
      
 
     };

@@ -46,7 +46,8 @@ const UserSchema = new Schema({
   },
   approved:{
     type:Boolean,
-    required:true
+    required:false,
+    default:false
   }
 
 });

@@ -37,5 +37,6 @@ router.delete("/cancelTicket/:user_id/:ticket_id",userController.deleteTicket)
 
 // login
 router.post("/login", userController.login);
+router.post("/approveUser/:user_id/:id",userController.approveUser)
 
 module.exports = router;
